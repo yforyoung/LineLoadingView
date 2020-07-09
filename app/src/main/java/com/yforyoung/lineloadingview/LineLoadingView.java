@@ -60,11 +60,11 @@ public class LineLoadingView extends View {
                     @Override
                     public void run() {
                         while (anim) {
-                            rectF.left = 0;
+                            rectF.left = 0;     //复用这个rectF，每次动画重置初始值
                             rectF.right = lineWidth;
                             postInvalidate();
                             try {
-                                Thread.sleep(1000 / changeSpeed);
+                                Thread.sleep(1000 / changeSpeed);       //控制速度
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -90,6 +90,7 @@ public class LineLoadingView extends View {
         return anim;
     }
 
+    //停止动画时还原到初始状态
     public void stopAnim() {
         minTempHeight = minHeight;
         minLowing = false;
@@ -166,50 +167,55 @@ public class LineLoadingView extends View {
         //5个一组
 
         /**
-         * 动画就是改变tempHeight  即某个线条的高度
-         * 线条高度逐减，减到不能减时（minHeight）逐增
-         * 增到不能增（maxHeight）逐减
+         * 这里能看出来其实是有规律的
+         * 可以进一步封装,来自定义有多少种不同高度的线条
          *
+         * 有兴趣可以再进一步封装
          * */
-        int top;
-        minTempHeight = changeHeight(minTempHeight, minLowing);
-        minLowing = changeLowing(minTempHeight, minLowing);
-        top = (maxHeight - tempHeight) / 2;
+        //绘制最短线条
+        minTempHeight = changeHeight(minTempHeight, minLowing); //改变高度
+        minLowing = changeLowing(minTempHeight, minLowing); //改变逐增/逐减
         for (int i : minList) {
-            draw(canvas, i, top);
+            draw(canvas, i);
         }
+        //绘制中等线条
         middleTempHeight = changeHeight(middleTempHeight, middleLowing);
         middleLowing = changeLowing(middleTempHeight, middleLowing);
-        top = (maxHeight - tempHeight) / 2;
         for (int i : middleList) {
-            draw(canvas, i, top);
+            draw(canvas, i);
         }
+        //绘制最高线条
         maxTempHeight = changeHeight(maxTempHeight, maxLowing);
         maxLowing = changeLowing(maxTempHeight, maxLowing);
-        top = (maxHeight - tempHeight) / 2;
         for (int i : maxList) {
-            draw(canvas, i, top);
+            draw(canvas, i);
         }
     }
 
-    private void draw(Canvas canvas, int i, int top) {  //i 标识
+    //绘制，就是画一条竖线
+    private void draw(Canvas canvas, int i) {  //i 标识位
         rectF.left = i * (lineWidth + lineSpace);
         rectF.right = rectF.left + lineWidth;
-        top = (maxHeight - tempHeight) / 2;
+        int top = (maxHeight - tempHeight) / 2;
         rectF.top = top;
         rectF.bottom = top + tempHeight;
         canvas.drawRoundRect(rectF, radius, radius, paint);
     }
 
 
+    /**
+     * @param height 初始高度
+     * @param lowing 减/增
+     * @return 返回值要记录下来  作为下一次动画的初始高度
+     */
     private int changeHeight(int height, boolean lowing) {
         if (lowing) {
-            //逐减中
+            //逐减中  按照changeStep进行逐减
             height = (int) Math.max(height - changeStep, minHeight);
 
         } else {
+            //逐增
             height = (int) Math.min(height + changeStep, maxHeight);
-
         }
         tempHeight = height;
         return height;
